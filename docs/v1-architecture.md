@@ -398,7 +398,11 @@ What V1 does **not** do (acceptable only because it runs on localhost for one us
 4. **React chat UI** — chat window, input, loading/error states, ToolTrace. *Check:* full flow in the browser.
 5. **Hardening + docs** — error paths (bad tz, unknown city, LLM down), README run instructions, V1 retrospective.
 
-## Open decisions (needed before step 3)
+## Decisions
 
-- **LLM provider** — whichever you have an API key for. Must support native tool calling.
-- **Default timezone / units** — for "what time is it?" with no location.
+- **LLM provider:** no paid API key. One adapter speaking the OpenAI-compatible
+  Chat Completions format, pointed via config at either a local Ollama model
+  (default, free, private) or a free-tier hosted endpoint. Tests use a FakeLLM.
+- **Default timezone / units:** `America/New_York` / `imperial` (user's clock read
+  19:02 at 23:02 UTC → UTC−4; pending confirmation). Configurable via `.env`.
+- Health endpoint lives in `api/health.py` rather than `api/chat.py`.
