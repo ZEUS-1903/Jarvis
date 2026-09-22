@@ -15,3 +15,12 @@ uv run pytest                       # tests
 ```
 
 Interactive API docs: http://localhost:8000/docs
+
+## Try tools directly (no LLM needed)
+
+```bash
+cd backend
+uv run python -m app.tools calculate '{"expression": "(1200 * 0.15) + 40"}'
+uv run python -m app.tools get_current_time '{"timezone": "Asia/Tokyo"}'
+uv run python -m app.tools get_weather '{"location": "Boston"}'
+```
