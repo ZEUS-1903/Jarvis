@@ -8,7 +8,7 @@ from functools import lru_cache
 from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import field_validator
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +20,17 @@ class Settings(BaseSettings):
     # Used when the user asks "what time is it?" without naming a place.
     default_timezone: str = "America/New_York"
     default_units: Literal["metric", "imperial"] = "imperial"
+
+    # LLM: any server speaking the OpenAI-compatible Chat Completions API.
+    # Default = Ollama running locally (free, private, no key).
+    llm_base_url: str = "http://localhost:11434/v1"
+    llm_model: str = "qwen3:8b"
+    llm_api_key: SecretStr | None = None  # SecretStr: never printed in logs/reprs
+    llm_timeout_s: float = 120.0          # local models on a laptop can be slow
+
+    # Agent safety limits
+    agent_max_iterations: int = 5         # max LLM<->tool rounds per user message
+    history_max_messages: int = 20        # user+assistant messages kept per conversation
 
     @field_validator("default_timezone")
     @classmethod
