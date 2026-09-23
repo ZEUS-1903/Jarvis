@@ -24,6 +24,14 @@ uv run pytest                       # tests
 
 Interactive API docs: http://localhost:8000/docs
 
+## Run the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev          # http://localhost:5173 (proxies /api to the backend on :8000)
+```
+
 ## Try tools directly (no LLM needed)
 
 ```bash
