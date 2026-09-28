@@ -71,3 +71,14 @@ button:disabled { opacity: .4; cursor: default; }
 .crash { max-width: 560px; margin: 15vh auto; padding: 0 20px; }
 .crash pre { white-space: pre-wrap; color: #f3b3b0; background: var(--err-bg); padding: 12px; border-radius: 10px; }
 .crash button { background: var(--accent); border: none; border-radius: 8px; padding: 8px 16px; color: #062026; font-weight: 600; }
+
+/* Markdown inside assistant bubbles */
+.bubble.md { white-space: normal; }
+.bubble.md > :first-child { margin-top: 0; }
+.bubble.md > :last-child { margin-bottom: 0; }
+.bubble.md p, .bubble.md ul, .bubble.md ol { margin: 0 0 .6em; }
+.bubble.md ul, .bubble.md ol { padding-left: 1.3em; }
+.bubble.md code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; background: #0d1014; padding: 1px 5px; border-radius: 4px; }
+.bubble.md pre { background: #0d1014; padding: 10px; border-radius: 8px; overflow-x: auto; }
+.bubble.md pre code { padding: 0; }
+.bubble.md a { color: var(--accent); }

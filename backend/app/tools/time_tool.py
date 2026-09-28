@@ -35,6 +35,9 @@ class CurrentTimeTool(Tool):
         return {
             "timezone": tz_name,
             "iso": now.isoformat(timespec="seconds"),
-            "display": now.strftime("%A, %B %d, %Y, %H:%M"),
+            # Separate, human-formatted fields so the model can say just the time
+            # ("3:25 PM") without reformatting or reciting the whole date.
+            "time": now.strftime("%I:%M %p").lstrip("0"),
+            "date": now.strftime("%A, %B %-d, %Y"),
             "utc_offset": now.strftime("%z"),
         }

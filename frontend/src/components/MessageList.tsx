@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import Markdown from "react-markdown";
 import type { ChatMessage } from "../types";
 import { ToolTrace } from "./ToolTrace";
 
@@ -22,7 +23,13 @@ export function MessageList({ messages, thinking }: { messages: ChatMessage[]; t
       {messages.map((m, i) => (
         <div key={i} className={`msg ${m.role}`}>
           {m.role === "assistant" && <ToolTrace tools={m.tools} />}
-          <div className="bubble">{m.content}</div>
+          {m.role === "assistant" ? (
+            // react-markdown builds React elements; it never injects raw HTML
+            // and strips javascript: links, so model output can't run scripts.
+            <div className="bubble md"><Markdown>{m.content}</Markdown></div>
+          ) : (
+            <div className="bubble">{m.content}</div>
+          )}
         </div>
       ))}
       {thinking && (
