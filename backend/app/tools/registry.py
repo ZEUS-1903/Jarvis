@@ -15,6 +15,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from app.security.secrets import redact
 from app.tools.base import Permission, Tool, ToolError, ToolResult
 
 logger = logging.getLogger("jarvis.tools")
@@ -42,7 +43,8 @@ class ToolRegistry:
             "tool.executed",
             extra={
                 "tool": name,
-                "tool_args": raw_args,
+                # Never write secrets to logs (e.g. a refused "remember my password").
+                "tool_args": redact(raw_args),
                 "status": "ok" if result.ok else "error",
                 "error": result.error,
                 "duration_ms": result.duration_ms,

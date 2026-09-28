@@ -93,3 +93,12 @@ async def test_high_risk_tool_never_runs_in_v1():
     result = await ToolRegistry([SendEmailTool()]).execute("send_email", {})
     assert not result.ok and "confirmation" in result.error
     assert SendEmailTool.ran is False
+
+
+async def test_secret_arguments_are_redacted_in_logs(caplog):
+    import logging
+    caplog.set_level(logging.INFO, logger="jarvis.tools")
+    await registry.execute("calculate", {"expression": "my password is hunter2"})
+    logged = [r.tool_args for r in caplog.records if getattr(r, "tool", None) == "calculate"]
+    assert logged == ["[redacted: looks like a secret]"]
+    assert "hunter2" not in caplog.text
