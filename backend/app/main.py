@@ -14,12 +14,15 @@ from app.llm.base import LLMClient
 from app.llm.openai_compat import OpenAICompatClient
 from app.observability.logging import request_id_var, setup_logging
 from app.tools import build_default_registry
+from app.voice.stt import FasterWhisperSTT, STTEngine
 from app.voice.tts import KokoroTTS, TTSEngine
 
 logger = logging.getLogger("jarvis.http")
 
 
-def create_app(llm: LLMClient | None = None, tts: TTSEngine | None = None) -> FastAPI:
+def create_app(
+    llm: LLMClient | None = None, tts: TTSEngine | None = None, stt: STTEngine | None = None,
+) -> FastAPI:
     """Build the app. Tests pass fakes; normally we build the real engines."""
     settings = get_settings()  # raises at startup if config is invalid
     setup_logging(settings.log_level)
@@ -45,6 +48,7 @@ def create_app(llm: LLMClient | None = None, tts: TTSEngine | None = None) -> Fa
         settings.tts_model_path, settings.tts_voices_path,
         default_voice=settings.tts_voice, speed=settings.tts_speed,
     )
+    app.state.stt = stt or FasterWhisperSTT(settings.stt_model, settings.stt_compute_type)
     app.state.agent = Agent(
         llm, build_default_registry(),
         timezone=settings.default_timezone, units=settings.default_units,

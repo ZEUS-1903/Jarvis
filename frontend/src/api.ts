@@ -53,3 +53,22 @@ export async function speak(text: string): Promise<Blob> {
   }
   return res.blob();
 }
+
+/** Send recorded speech to the backend's Whisper; returns the recognized text. */
+export async function transcribe(audio: Blob): Promise<{ text: string; audio_s: number }> {
+  let res: Response;
+  try {
+    res = await fetch("/api/voice/transcribe", {
+      method: "POST",
+      headers: { "Content-Type": audio.type || "application/octet-stream" },
+      body: audio,
+    });
+  } catch {
+    throw new ApiError(0, "Can't reach the Jarvis backend.");
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new ApiError(res.status, typeof body?.detail === "string" ? body.detail : `Transcription failed (HTTP ${res.status})`);
+  }
+  return res.json();
+}

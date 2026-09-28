@@ -101,6 +101,16 @@ A blend like `am_michael:60,bm_george:40` mixes voices into one that is none of 
 presets. Put your choice in `backend/.env` as `JARVIS_TTS_VOICE=...` and restart the
 backend. In the chat, click 🔊 under any reply.
 
+## Voice input (speech-to-text)
+
+Click 🎤, speak, click again. Your speech is transcribed locally by Whisper
+([faster-whisper](https://github.com/SYSTRAN/faster-whisper)), sent to JARVIS, and the
+reply is spoken back automatically. The first use downloads the Whisper model
+(`base.en`, ~150 MB) from Hugging Face; after that it works offline. For better
+accuracy (slower), set `JARVIS_STT_MODEL=small.en` in `backend/.env`.
+
+The browser asks for microphone permission the first time.
+
 ## Try tools directly (no LLM needed)
 
 ```bash

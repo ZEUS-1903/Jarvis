@@ -1,8 +1,8 @@
-import { useState, type KeyboardEvent } from "react";
+import { useState, type KeyboardEvent, type ReactNode } from "react";
 
 const MAX_CHARS = 4000; // same limit the backend enforces
 
-export function MessageInput({ onSend, disabled }: { onSend: (text: string) => void; disabled: boolean }) {
+export function MessageInput({ onSend, disabled, extra }: { onSend: (text: string) => void; disabled: boolean; extra?: ReactNode }) {
   const [text, setText] = useState("");
 
   function submit() {
@@ -30,6 +30,7 @@ export function MessageInput({ onSend, disabled }: { onSend: (text: string) => v
         rows={1}
         autoFocus
       />
+      {extra}
       <button onClick={submit} disabled={disabled || !text.trim()} aria-label="Send">↑</button>
     </div>
   );

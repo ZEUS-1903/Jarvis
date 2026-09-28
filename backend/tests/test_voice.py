@@ -130,3 +130,77 @@ def test_voices_endpoint():
     client = TestClient(create_app(llm=FakeLLM(), tts=FakeTTS()))
     assert client.get("/api/voice/voices").json() == {"default": "af_heart",
                                                        "voices": ["af_heart", "am_michael"]}
+
+
+# ---- speech-to-text ----------------------------------------------------------
+from app.voice.stt import AudioDecodeError, FasterWhisperSTT, STTUnavailable, Transcript  # noqa: E402
+
+
+class FakeSTT:
+    def __init__(self, text="what time is it", error=None):
+        self.text, self.error, self.received = text, error, []
+
+    async def transcribe(self, audio):
+        if self.error:
+            raise self.error
+        self.received.append(audio)
+        return Transcript(text=self.text, audio_s=1.5)
+
+
+def test_transcribe_returns_text():
+    stt = FakeSTT()
+    client = TestClient(create_app(llm=FakeLLM(), tts=FakeTTS(), stt=stt))
+    r = client.post("/api/voice/transcribe", content=b"\x1aE\xdf\xa3webm",
+                    headers={"Content-Type": "audio/webm"})
+    assert r.status_code == 200
+    assert r.json() == {"text": "what time is it", "audio_s": 1.5}
+    assert stt.received == [b"\x1aE\xdf\xa3webm"]
+
+
+@pytest.mark.parametrize("error, status", [
+    (STTUnavailable("no model"), 503),
+    (AudioDecodeError("could not decode audio"), 422),
+])
+def test_transcribe_errors(error, status):
+    client = TestClient(create_app(llm=FakeLLM(), tts=FakeTTS(), stt=FakeSTT(error=error)))
+    assert client.post("/api/voice/transcribe", content=b"x").status_code == status
+
+
+def test_transcribe_rejects_empty_and_huge():
+    client = TestClient(create_app(llm=FakeLLM(), tts=FakeTTS(), stt=FakeSTT()))
+    assert client.post("/api/voice/transcribe", content=b"").status_code == 422
+    assert client.post("/api/voice/transcribe", content=b"0" * (5 * 1024 * 1024 + 1)).status_code == 413
+
+
+class _Seg:
+    def __init__(self, text):
+        self.text = text
+
+
+class FakeWhisper:
+    def __init__(self):
+        self.kwargs = None
+
+    def transcribe(self, samples, **kwargs):
+        self.kwargs = kwargs
+        return iter([_Seg(" What time"), _Seg(" is it? ")]), None
+
+
+def _wav_bytes(seconds=1.0, rate=16000):
+    return to_wav(np.zeros(int(seconds * rate), np.float32), rate)
+
+
+async def test_whisper_engine_decodes_and_joins_segments():
+    stt = FasterWhisperSTT()
+    stt._model = fake = FakeWhisper()
+    result = await stt.transcribe(_wav_bytes(2.0))
+    assert result.text == "What time is it?"
+    assert abs(result.audio_s - 2.0) < 0.05
+    assert fake.kwargs["vad_filter"] is True and fake.kwargs["language"] == "en"
+
+
+async def test_whisper_engine_rejects_garbage_audio():
+    stt = FasterWhisperSTT()
+    stt._model = FakeWhisper()
+    with pytest.raises(AudioDecodeError):
+        await stt.transcribe(b"definitely not audio")

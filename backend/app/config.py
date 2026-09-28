@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     tts_voice: str = "af_heart"
     tts_speed: float = 1.0
 
+    # Speech-to-text (Whisper via faster-whisper, runs locally). The model is
+    # downloaded automatically on first use. "base.en" (~150 MB) is fast;
+    # "small.en" (~480 MB) is more accurate but slower.
+    stt_model: str = "base.en"
+    stt_compute_type: str = "int8"  # 8-bit weights: ~4x less memory, fast on CPU
+
     # Agent safety limits
     agent_max_iterations: int = 5         # max LLM<->tool rounds per user message
     history_max_messages: int = 20        # user+assistant messages kept per conversation
