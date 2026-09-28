@@ -8,6 +8,9 @@ from app.llm.base import Usage
 class ChatRequest(BaseModel):
     conversation_id: str | None = None
     message: str = Field(min_length=1, max_length=4000)
+    # True when the message was spoken: the reply will be read aloud, so the
+    # agent is told to keep it short and speakable.
+    voice: bool = False
 
 
 class ChatUsage(Usage):

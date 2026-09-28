@@ -45,7 +45,7 @@ export default function App() {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setThinking(true);
     try {
-      const res = await sendMessage(text, conversationId);
+      const res = await sendMessage(text, conversationId, Boolean(speakWith));
       setConversationId(res.conversation_id);
       setMessages((prev) => [
         ...prev,

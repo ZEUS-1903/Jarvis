@@ -55,9 +55,10 @@ class Agent:
         self.location = location
         self.max_iterations = max_iterations
 
-    async def run(self, history: list[Message], user_text: str) -> AgentResult:
+    async def run(self, history: list[Message], user_text: str, voice: bool = False) -> AgentResult:
+        system = build_system_prompt(self.timezone, self.units, self.location, voice=voice)
         messages = [
-            Message(role="system", content=build_system_prompt(self.timezone, self.units, self.location)),
+            Message(role="system", content=system),
             *history,
             Message(role="user", content=user_text),
         ]

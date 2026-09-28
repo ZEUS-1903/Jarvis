@@ -33,6 +33,10 @@ _WMO_CODES = {
 }
 
 
+def _round(value: float | None) -> int | None:
+    return None if value is None else round(value)
+
+
 class WeatherArgs(BaseModel):
     location: str = Field(min_length=1, max_length=100,
                           description="City name, e.g. 'Boston' or 'Paris'.")
@@ -81,15 +85,17 @@ class WeatherTool(Tool):
                     p for p in (place.get("name"), place.get("admin1"), place.get("country")) if p
                 ),
                 "local_time": current.get("time"),
-                "temperature": current["temperature_2m"],
-                "feels_like": current.get("apparent_temperature"),
+                # Rounded on purpose: "57 degrees" is how people talk, and the
+                # model repeats whatever precision we hand it.
+                "temperature": _round(current["temperature_2m"]),
+                "feels_like": _round(current.get("apparent_temperature")),
                 "temperature_unit": "°F" if imperial else "°C",
                 "conditions": _WMO_CODES.get(current.get("weather_code"), "unknown"),
                 "humidity_percent": current.get("relative_humidity_2m"),
-                "wind_speed": current.get("wind_speed_10m"),
+                "wind_speed": _round(current.get("wind_speed_10m")),
                 "wind_unit": "mph" if imperial else "km/h",
-                "today_high": daily["temperature_2m_max"][0],
-                "today_low": daily["temperature_2m_min"][0],
+                "today_high": _round(daily["temperature_2m_max"][0]),
+                "today_low": _round(daily["temperature_2m_min"][0]),
                 "precipitation_chance_percent": daily["precipitation_probability_max"][0],
             }
         except (KeyError, IndexError, TypeError):

@@ -30,9 +30,10 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
             raise HTTPException(404, "conversation not found; start a new one")
 
     logger.info("chat.request", extra={"conversation_id": conversation_id,
-                                       "message_chars": len(body.message)})
+                                       "message_chars": len(body.message),
+                                       "voice": body.voice})
     try:
-        result = await agent.run(history, body.message)
+        result = await agent.run(history, body.message, voice=body.voice)
     except LLMError as exc:
         logger.error("chat.llm_error", extra={"conversation_id": conversation_id,
                                               "error": str(exc)})

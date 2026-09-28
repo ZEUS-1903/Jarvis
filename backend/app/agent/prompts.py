@@ -2,7 +2,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-PROMPT_VERSION = "v3"  # v3: home location, no emojis, compact weather
+PROMPT_VERSION = "v4"  # v4: voice-mode instructions
 
 _TEMPLATE = """\
 You are Jarvis, a personal AI assistant. You are calm, capable, concise and friendly.
@@ -31,12 +31,23 @@ Context:
 """
 
 
-def build_system_prompt(timezone: str, units: str, location: str = "") -> str:
+_VOICE_MODE = """
+Voice mode:
+- The user is speaking to you, and your reply will be read aloud by a speech engine.
+- Reply in one or two short sentences. Mention at most two numbers.
+- No lists, headings, symbols, or Markdown. Write numbers the way you would say them.
+- The user's words come from speech recognition and may contain small errors
+  (e.g. "what's up weather" likely means "what's the weather"). Infer the obvious meaning.
+"""
+
+
+def build_system_prompt(timezone: str, units: str, location: str = "", voice: bool = False) -> str:
     today = datetime.now(ZoneInfo(timezone)).strftime("%A, %B %d, %Y")
     location_line = (
         f"User's home location: {location}. Use it when they don't name a place."
         if location
         else "User's home location is unknown; ask if a request needs it."
     )
-    return _TEMPLATE.format(timezone=timezone, date=today, units=units,
-                            location_line=location_line)
+    prompt = _TEMPLATE.format(timezone=timezone, date=today, units=units,
+                              location_line=location_line)
+    return prompt + _VOICE_MODE if voice else prompt

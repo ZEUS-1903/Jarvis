@@ -31,7 +31,8 @@ async def test_happy_path_imperial():
 
     data = await make_tool(handler).run(WeatherArgs(location="Boston", units="imperial"))
     assert data["location"] == "Boston, Massachusetts, United States"
-    assert data["temperature"] == 57.2 and data["temperature_unit"] == "°F"
+    assert data["temperature"] == 57 and data["temperature_unit"] == "°F"
+    assert (data["today_high"], data["today_low"], data["wind_speed"]) == (63, 51, 8)
     assert data["conditions"] == "overcast"
     assert data["precipitation_chance_percent"] == 10
     assert seen[1].params["temperature_unit"] == "fahrenheit"

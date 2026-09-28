@@ -7,13 +7,17 @@ export class ApiError extends Error {
   }
 }
 
-export async function sendMessage(message: string, conversationId: string | null): Promise<ChatResponse> {
+export async function sendMessage(
+  message: string,
+  conversationId: string | null,
+  voice = false,
+): Promise<ChatResponse> {
   let res: Response;
   try {
     res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, conversation_id: conversationId }),
+      body: JSON.stringify({ message, conversation_id: conversationId, voice }),
     });
   } catch {
     throw new ApiError(0, "Can't reach the Jarvis backend. Is it running on port 8000?");

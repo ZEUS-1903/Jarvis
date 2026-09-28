@@ -50,3 +50,12 @@ def test_failed_request_creates_no_conversation():
     app = create_app(llm=FakeLLM(LLMError("down")))
     TestClient(app).post("/api/chat", json={"message": "hi"})
     assert app.state.store._conversations == {}
+
+
+def test_voice_flag_adds_voice_instructions():
+    llm = FakeLLM(text("It's 57 degrees."), text("ok"))
+    client = TestClient(create_app(llm=llm))
+    client.post("/api/chat", json={"message": "weather?", "voice": True})
+    client.post("/api/chat", json={"message": "weather?"})
+    assert "Voice mode" in llm.calls[0][0].content
+    assert "Voice mode" not in llm.calls[1][0].content
