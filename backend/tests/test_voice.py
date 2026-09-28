@@ -203,3 +203,68 @@ async def test_whisper_engine_rejects_garbage_audio():
     stt._model = FakeWhisper()
     with pytest.raises(AudioDecodeError):
         await stt.transcribe(b"definitely not audio")
+
+
+# ---- wake word WebSocket -----------------------------------------------------
+from starlette.websockets import WebSocketDisconnect  # noqa: E402
+
+from app.voice.wake import FRAME, WakeUnavailable  # noqa: E402
+
+
+class FakeDetector:
+    """Scores 0.9 for frames whose samples are loud, 0 otherwise."""
+    def __init__(self):
+        self.resets = 0
+
+    def score(self, frames):
+        return 0.9 if np.abs(frames).max() > 10000 else 0.0
+
+    def reset(self):
+        self.resets += 1
+
+
+def pcm(loud: bool, frames=1) -> bytes:
+    value = 20000 if loud else 0
+    return np.full(FRAME * frames, value, dtype="<i2").tobytes()
+
+
+def test_wake_socket_detects_and_cools_down():
+    detector = FakeDetector()
+    client = TestClient(make_test_app(wake_factory=lambda: detector))
+    with client.websocket_connect("/api/voice/wake") as ws:
+        assert ws.receive_json() == {"type": "ready"}
+        ws.send_bytes(pcm(False, 3))
+        ws.send_bytes(pcm(True)[:1000])      # partial frame: buffered, not scored yet
+        ws.send_bytes(pcm(True)[1000:])      # completes the frame
+        assert ws.receive_json() == {"type": "wake", "score": 0.9}
+        ws.send_bytes(pcm(True, 2))          # within cooldown: no second event
+        ws.send_text("ping")                 # text frames are ignored
+    assert detector.resets == 1
+
+
+def test_wake_socket_reports_missing_model():
+    def broken():
+        raise WakeUnavailable("run wake-setup")
+    client = TestClient(make_test_app(wake_factory=broken))
+    with client.websocket_connect("/api/voice/wake") as ws:
+        assert ws.receive_json() == {"type": "error", "message": "run wake-setup"}
+
+
+def test_wake_socket_rejects_foreign_origin():
+    client = TestClient(make_test_app(wake_factory=FakeDetector))
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect("/api/voice/wake", headers={"origin": "https://evil.example"}) as ws:
+            ws.receive_json()
+    assert exc.value.code == 1008
+
+
+def test_wake_socket_allows_jarvis_origin():
+    client = TestClient(make_test_app(wake_factory=FakeDetector))
+    with client.websocket_connect("/api/voice/wake", headers={"origin": "http://localhost:5173"}) as ws:
+        assert ws.receive_json()["type"] == "ready"
+
+
+def test_real_detector_without_model_files_gives_setup_hint():
+    from app.voice.wake import OpenWakeWordDetector
+    with pytest.raises(WakeUnavailable, match="wake-setup"):
+        OpenWakeWordDetector("hey_jarvis")  # model files aren't downloaded in CI/sandbox

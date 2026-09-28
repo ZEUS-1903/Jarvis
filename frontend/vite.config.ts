@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     // Forward /api/* to FastAPI. The browser only ever talks to the Vite
     // origin, so no CORS config is needed in development.
-    proxy: { "/api": "http://localhost:8000" },
+    // ws: true also forwards WebSocket upgrades (the wake word stream).
+    proxy: { "/api": { target: "http://localhost:8000", ws: true } },
   },
 });

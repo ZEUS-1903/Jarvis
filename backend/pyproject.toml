@@ -11,6 +11,7 @@ dependencies = [
     "kokoro-onnx>=0.6.1",
     "faster-whisper>=1.2.1",
     "psycopg[binary,pool]>=3.3.6",
+    "openwakeword>=0.6.0",
 ]
 
 [dependency-groups]
@@ -22,3 +23,8 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+
+[tool.uv]
+# openwakeword 0.6 pins tflite-runtime on Linux, which has no Python 3.12 build.
+# We run openwakeword with its ONNX backend, so drop tflite everywhere.
+override-dependencies = ["tflite-runtime ; sys_platform == 'never'"]

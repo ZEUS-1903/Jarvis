@@ -44,6 +44,13 @@ class Settings(BaseSettings):
     stt_model: str = "base.en"
     stt_compute_type: str = "int8"  # 8-bit weights: ~4x less memory, fast on CPU
 
+    # Wake word ("hey jarvis", openWakeWord, runs locally). Score 0..1 per 80 ms of audio;
+    # raise the threshold if it triggers by itself, lower it if it misses you.
+    wake_model: str = "hey_jarvis"
+    wake_threshold: float = 0.5
+    # Browser pages allowed to open the wake-word WebSocket (see api/voice.py).
+    allowed_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+
     # PostgreSQL. Homebrew's default user is your macOS login with no password,
     # so "postgresql://localhost/jarvis" works after `createdb jarvis`.
     database_url: str = "postgresql://localhost:5432/jarvis"

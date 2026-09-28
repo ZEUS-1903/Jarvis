@@ -137,6 +137,24 @@ accuracy (slower), set `JARVIS_STT_MODEL=small.en` in `backend/.env`.
 
 The browser asks for microphone permission the first time.
 
+## Hands-free: "Hey Jarvis"
+
+Uses [openWakeWord](https://github.com/dscripka/openWakeWord) locally. Download the model once:
+
+```bash
+cd backend
+uv run python -m app.voice wake-setup
+```
+
+In the UI, click **Hey Jarvis: off** to turn listening on (the mic stays on while enabled;
+macOS shows the orange dot). Say *"Hey Jarvis"*, wait for the chime, then say your command.
+JARVIS stops recording after about a second of silence.
+
+- Triggers by itself? Raise `JARVIS_WAKE_THRESHOLD` (e.g. `0.7`) in `backend/.env`.
+- Misses you? Lower it (e.g. `0.35`).
+- Only the JARVIS page (`http://localhost:5173`) may connect to the wake word stream; if you
+  run the frontend on another port, add it to `JARVIS_ALLOWED_ORIGINS`.
+
 ## Try tools directly (no LLM needed)
 
 ```bash

@@ -2,6 +2,12 @@ import { speak } from "./api";
 
 // Only one thing may talk at a time (a 🔊 click, or an automatic voice reply).
 let stopCurrent: (() => void) | null = null;
+let speaking = false;
+
+/** True from the moment a reply is requested until it finishes playing. */
+export function isSpeaking(): boolean {
+  return speaking;
+}
 
 export function stopSpeaking(): void {
   stopCurrent?.();
@@ -25,6 +31,7 @@ export async function playSpeech(
   let url: string | null = null;
   let cancelled = false;
   const finish = () => {
+    speaking = false;
     if (url) URL.revokeObjectURL(url);
     if (stopCurrent === stop) stopCurrent = null;
     onState("idle");
@@ -35,6 +42,7 @@ export async function playSpeech(
     finish();
   };
   stopCurrent = stop;
+  speaking = true;
   onState("loading");
   try {
     const blob = await speak(text);

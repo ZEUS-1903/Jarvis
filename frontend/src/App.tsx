@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, checkHealth, getConversationMessages, getMemories, sendMessage, transcribe } from "./api";
 import { MemoryPanel } from "./components/MemoryPanel";
+import { WakeToggle } from "./components/WakeToggle";
 import { loadConversationId, saveConversationId } from "./conversationStorage";
 import { MicButton } from "./components/MicButton";
 import { MessageInput } from "./components/MessageInput";
 import { MessageList } from "./components/MessageList";
-import { playSpeech } from "./speech";
+import { isSpeaking, playSpeech } from "./speech";
 import type { ChatMessage, Memory } from "./types";
 
 export default function App() {
@@ -64,6 +65,8 @@ export default function App() {
     } finally {
       setTranscribing(false);
     }
+    // Drop the wake phrase if Whisper heard it ("Hey Jarvis, what's the time?").
+    text = text.replace(/^\s*(hey|hi|okay|ok)?[\s,]*jarvis\b[\s,.!?:-]*/i, "").trim();
     if (!text) {
       setError("I didn't catch that. Try again, a little closer to the mic.");
       return;
@@ -120,6 +123,10 @@ export default function App() {
           Jarvis
         </div>
         <div className="header-actions">
+          <WakeToggle
+            isBusy={() => thinking || transcribing || isSpeaking()}
+            onCommand={(wav) => handleVoice(wav, new Audio())}
+          />
           <button
             className="ghost"
             onClick={() => {

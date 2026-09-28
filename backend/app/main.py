@@ -2,6 +2,7 @@
 import logging
 import time
 import uuid
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -19,6 +20,7 @@ from app.observability.logging import request_id_var, setup_logging
 from app.tools import build_default_registry
 from app.voice.stt import FasterWhisperSTT, STTEngine
 from app.voice.tts import KokoroTTS, TTSEngine
+from app.voice.wake import OpenWakeWordDetector, WakeDetector
 
 logger = logging.getLogger("jarvis.http")
 
@@ -26,6 +28,7 @@ logger = logging.getLogger("jarvis.http")
 def create_app(
     llm: LLMClient | None = None, tts: TTSEngine | None = None, stt: STTEngine | None = None,
     store: ConversationStore | None = None, memories: MemoryStore | None = None,
+    wake_factory: Callable[[], WakeDetector] | None = None,
 ) -> FastAPI:
     """Build the app. Tests pass fakes; normally we build the real engines."""
     settings = get_settings()  # raises at startup if config is invalid
@@ -68,6 +71,8 @@ def create_app(
         default_voice=settings.tts_voice, speed=settings.tts_speed,
     )
     app.state.stt = stt or FasterWhisperSTT(settings.stt_model, settings.stt_compute_type)
+    # A factory, not an instance: each WebSocket connection needs its own detector.
+    app.state.wake_factory = wake_factory or (lambda: OpenWakeWordDetector(settings.wake_model))
     app.state.agent = Agent(
         llm, build_default_registry(memories),
         timezone=settings.default_timezone, units=settings.default_units,
