@@ -23,8 +23,13 @@ brew install uv node ollama
 ### 2. Start the model — Terminal 1
 
 ```bash
-ollama serve                 # leave running (skip if the Ollama menu-bar app is open)
+OLLAMA_CONTEXT_LENGTH=8192 OLLAMA_FLASH_ATTENTION=1 OLLAMA_KV_CACHE_TYPE=q8_0 ollama serve
 ```
+
+Leave it running. Why the settings: on a 16 GB Mac Ollama defaults to a 4,096-token
+context window; system prompt + tool schemas + history + Qwen3's reasoning can exceed
+that, and Ollama then silently drops the *start* of the prompt (the system prompt).
+8,192 fits comfortably; flash attention and the 8-bit KV cache keep the extra memory small.
 
 In another tab, download the model once (~5 GB, fits a 16 GB Mac):
 

@@ -7,6 +7,20 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>Jarvis needs JavaScript enabled.</noscript>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Last-resort diagnostics: if the app hasn't drawn anything after 8s
+      // (e.g. a module failed to load), say so instead of showing a blank page.
+      setTimeout(function () {
+        var root = document.getElementById("root");
+        if (root && !root.hasChildNodes()) {
+          root.innerHTML =
+            '<p style="font-family:sans-serif;color:#e6e9ee;padding:40px">' +
+            "Jarvis didn't start. Press Cmd+Shift+R to reload; if it persists, " +
+            "open the console (Cmd+Option+J) and share the red errors.</p>";
+        }
+      }, 8000);
+    </script>
   </body>
 </html>
