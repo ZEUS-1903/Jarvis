@@ -66,3 +66,17 @@ async def test_history_is_included():
     history = [Message(role="user", content="I'm Sam"), Message(role="assistant", content="Hi Sam")]
     await make_agent(llm).run(history, "what's my name?")
     assert [m.content for m in llm.calls[0][1:]] == ["I'm Sam", "Hi Sam", "what's my name?"]
+
+
+async def test_home_location_in_system_prompt():
+    llm = FakeLLM(text("ok"))
+    agent = Agent(llm, build_default_registry(), timezone="America/New_York",
+                  units="imperial", location="Boston")
+    await agent.run([], "weather?")
+    assert "home location: Boston" in llm.calls[0][0].content
+
+
+async def test_unknown_location_tells_model_to_ask():
+    llm = FakeLLM(text("ok"))
+    await make_agent(llm).run([], "weather?")
+    assert "unknown; ask" in llm.calls[0][0].content

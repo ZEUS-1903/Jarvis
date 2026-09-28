@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     # Used when the user asks "what time is it?" without naming a place.
     default_timezone: str = "America/New_York"
     default_units: Literal["metric", "imperial"] = "imperial"
+    # Used for "what's the weather?" with no place named. Empty = ask the user.
+    default_location: str = ""
 
     # LLM: any server speaking the OpenAI-compatible Chat Completions API.
     # Default = Ollama running locally (free, private, no key).

@@ -43,6 +43,7 @@ def create_app(llm: LLMClient | None = None) -> FastAPI:
     app.state.agent = Agent(
         llm, build_default_registry(),
         timezone=settings.default_timezone, units=settings.default_units,
+        location=settings.default_location,
         max_iterations=settings.agent_max_iterations,
     )
 

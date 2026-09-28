@@ -46,17 +46,18 @@ class AgentResult(BaseModel):
 class Agent:
     def __init__(
         self, llm: LLMClient, tools: ToolRegistry, *, timezone: str, units: str,
-        max_iterations: int = 5,
+        location: str = "", max_iterations: int = 5,
     ) -> None:
         self.llm = llm
         self.tools = tools
         self.timezone = timezone
         self.units = units
+        self.location = location
         self.max_iterations = max_iterations
 
     async def run(self, history: list[Message], user_text: str) -> AgentResult:
         messages = [
-            Message(role="system", content=build_system_prompt(self.timezone, self.units)),
+            Message(role="system", content=build_system_prompt(self.timezone, self.units, self.location)),
             *history,
             Message(role="user", content=user_text),
         ]
