@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     stt_model: str = "base.en"
     stt_compute_type: str = "int8"  # 8-bit weights: ~4x less memory, fast on CPU
 
+    # PostgreSQL. Homebrew's default user is your macOS login with no password,
+    # so "postgresql://localhost/jarvis" works after `createdb jarvis`.
+    database_url: str = "postgresql://localhost:5432/jarvis"
+
     # Agent safety limits
     agent_max_iterations: int = 5         # max LLM<->tool rounds per user message
     history_max_messages: int = 20        # user+assistant messages kept per conversation

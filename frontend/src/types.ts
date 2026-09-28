@@ -18,3 +18,14 @@ export interface ChatResponse {
 export type ChatMessage =
   | { role: "user"; content: string }
   | { role: "assistant"; content: string; tools: ToolTrace[]; requestId: string | null };
+
+export type MemoryCategory = "preference" | "person" | "project" | "fact" | "other";
+
+export interface Memory {
+  id: number;
+  content: string;
+  category: MemoryCategory;
+  status: "active" | "pending";
+  source: "user" | "assistant";
+  created_at: string;
+}

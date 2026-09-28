@@ -2,16 +2,17 @@ import json
 import logging
 
 import pytest
+
+from tests.fakes import make_test_app
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.config import Settings
-from app.main import create_app
 from app.observability.logging import JsonFormatter, request_id_var
 
 
 def test_health_returns_ok_and_request_id():
-    client = TestClient(create_app())
+    client = TestClient(make_test_app())
     response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}

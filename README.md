@@ -38,6 +38,22 @@ ollama pull qwen3:8b
 ollama run qwen3:8b "say hi"   # sanity check, then Ctrl+D
 ```
 
+### 2b. Database (PostgreSQL) — once
+
+JARVIS stores conversations and long-term memory in PostgreSQL.
+
+```bash
+brew install postgresql@17
+brew services start postgresql@17            # runs in the background, starts at login
+export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"   # add this line to ~/.zshrc too
+createdb jarvis                              # the app's database
+createdb jarvis_test                         # optional: used by the test suite
+```
+
+The default `JARVIS_DATABASE_URL=postgresql://localhost:5432/jarvis` works with
+Homebrew's defaults (your macOS user, no password). Tables are created automatically
+when the backend starts.
+
 ### 3. Start the backend — Terminal 2
 
 ```bash
@@ -71,6 +87,16 @@ Open **http://localhost:5173** and ask: *"What's the weather in Boston and what 
 | Replies take 20s+ | Try `JARVIS_LLM_MODEL=llama3.1:8b` (pull it first) and restart the backend. |
 | "Jarvis restarted and lost this conversation" | Expected in V1: history is in memory and `--reload` restarts on code changes. |
 | `address already in use` | Something else uses the port; stop it or change `--port`. |
+
+## Memory
+
+JARVIS keeps a long-term memory of facts about you (open **Memory** in the header).
+
+- Say "Remember that…" and it's saved right away.
+- If JARVIS decides on its own that something is worth remembering, it becomes a
+  *proposal* you approve or dismiss in the Memory panel (badge on the button).
+- Passwords, card numbers and similar secrets are never stored.
+- You can add and delete memories yourself in the panel.
 
 ## Voice setup (text-to-speech)
 

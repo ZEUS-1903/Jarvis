@@ -24,9 +24,8 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
     history: list[Message] = []
     if conversation_id is not None:
         try:
-            history = store.get(conversation_id)
+            history = await store.get(conversation_id)
         except ConversationNotFound:
-            # Common after a backend restart in V1 (history is in memory).
             raise HTTPException(404, "conversation not found; start a new one")
 
     logger.info("chat.request", extra={"conversation_id": conversation_id,
@@ -40,9 +39,9 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
         raise HTTPException(502, f"The language model is unavailable: {exc}")
 
     if conversation_id is None:
-        conversation_id = store.create()  # only once we have something to save
+        conversation_id = await store.create()  # only once we have something to save
     # Store only user text + final reply (not tool traffic) to keep context small.
-    store.append(conversation_id,
+    await store.append(conversation_id,
                  Message(role="user", content=body.message),
                  Message(role="assistant", content=result.reply))
 
@@ -63,3 +62,13 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
         usage=ChatUsage(**result.usage.model_dump(), llm_calls=result.llm_calls),
         request_id=request_id_var.get(),
     )
+
+
+@router.get("/conversations/{conversation_id}/messages")
+async def conversation_messages(conversation_id: str, request: Request) -> dict:
+    """Recent messages, so the UI can restore a conversation after a page reload."""
+    try:
+        history = await request.app.state.store.get(conversation_id)
+    except ConversationNotFound:
+        raise HTTPException(404, "conversation not found")
+    return {"messages": [{"role": m.role, "content": m.content} for m in history]}

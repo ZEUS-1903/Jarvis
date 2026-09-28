@@ -1,12 +1,17 @@
 from app.tools.base import Permission, Tool, ToolError, ToolResult
+from app.memory.store import MemoryStore
 from app.tools.calculator import CalculatorTool
+from app.tools.memory_tools import ForgetTool, RememberTool
 from app.tools.registry import ToolRegistry
 from app.tools.time_tool import CurrentTimeTool
 from app.tools.weather import WeatherTool
 
 
-def build_default_registry() -> ToolRegistry:
-    return ToolRegistry([CurrentTimeTool(), CalculatorTool(), WeatherTool()])
+def build_default_registry(memories: MemoryStore | None = None) -> ToolRegistry:
+    tools = [CurrentTimeTool(), CalculatorTool(), WeatherTool()]
+    if memories is not None:
+        tools += [RememberTool(memories), ForgetTool(memories)]
+    return ToolRegistry(tools)
 
 
 __all__ = ["Permission", "Tool", "ToolError", "ToolResult", "ToolRegistry",

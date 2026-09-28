@@ -33,3 +33,15 @@ def calls(*specs: tuple[str, str]) -> LLMResponse:
 
 
 __all__ = ["FakeLLM", "LLMError", "text", "calls"]
+
+
+def make_test_app(**overrides):
+    """create_app with in-memory stores, so API tests need no database."""
+    from app.conversation.store import InMemoryConversationStore
+    from app.main import create_app
+    from app.memory.store import InMemoryMemoryStore
+
+    overrides.setdefault("llm", FakeLLM())
+    overrides.setdefault("store", InMemoryConversationStore())
+    overrides.setdefault("memories", InMemoryMemoryStore())
+    return create_app(**overrides)

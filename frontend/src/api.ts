@@ -76,3 +76,36 @@ export async function transcribe(audio: Blob): Promise<{ text: string; audio_s: 
   }
   return res.json();
 }
+
+// ---- memory & history ---------------------------------------------------------
+import type { Memory, MemoryCategory } from "./types";
+
+async function json<T>(path: string, init?: RequestInit): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(path, init);
+  } catch {
+    throw new ApiError(0, "Can't reach the Jarvis backend.");
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new ApiError(res.status, typeof body?.detail === "string" ? body.detail : `Request failed (HTTP ${res.status})`);
+  }
+  return res.status === 204 ? (undefined as T) : res.json();
+}
+
+export const getMemories = () => json<{ active: Memory[]; pending: Memory[] }>("/api/memories");
+
+export const addMemory = (content: string, category: MemoryCategory) =>
+  json<Memory>("/api/memories", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content, category }),
+  });
+
+export const approveMemory = (id: number) => json<Memory>(`/api/memories/${id}/approve`, { method: "POST" });
+
+export const deleteMemory = (id: number) => json<void>(`/api/memories/${id}`, { method: "DELETE" });
+
+export const getConversationMessages = (id: string) =>
+  json<{ messages: { role: "user" | "assistant"; content: string }[] }>(`/api/conversations/${id}/messages`);

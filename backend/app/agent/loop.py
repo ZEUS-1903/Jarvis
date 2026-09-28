@@ -16,7 +16,9 @@ import logging
 
 from pydantic import BaseModel
 
+from app.agent.context import user_message_var
 from app.agent.prompts import build_system_prompt
+from app.memory.store import MemoryStore
 from app.llm.base import LLMClient, Message, Usage
 from app.tools.registry import ToolRegistry
 
@@ -46,17 +48,27 @@ class AgentResult(BaseModel):
 class Agent:
     def __init__(
         self, llm: LLMClient, tools: ToolRegistry, *, timezone: str, units: str,
-        location: str = "", max_iterations: int = 5,
+        location: str = "", max_iterations: int = 5, memories: MemoryStore | None = None,
     ) -> None:
         self.llm = llm
         self.tools = tools
         self.timezone = timezone
         self.units = units
         self.location = location
+        self.memories = memories
         self.max_iterations = max_iterations
 
     async def run(self, history: list[Message], user_text: str, voice: bool = False) -> AgentResult:
-        system = build_system_prompt(self.timezone, self.units, self.location, voice=voice)
+        # Tools (e.g. remember) check what the user actually said via this context var.
+        user_message_var.set(user_text)
+        # Re-read every turn so edits in the Memory panel apply immediately.
+        # A few dozen short facts fit easily in the prompt; semantic search
+        # (embeddings) only becomes worthwhile with hundreds.
+        facts = []
+        if self.memories is not None:
+            facts = [f"[{m.id}] {m.content}" for m in await self.memories.list(status="active", limit=100)]
+        system = build_system_prompt(self.timezone, self.units, self.location, voice=voice,
+                                     memories=facts)
         messages = [
             Message(role="system", content=system),
             *history,

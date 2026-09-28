@@ -1,23 +1,55 @@
-import { useEffect, useState } from "react";
-import { ApiError, checkHealth, sendMessage, transcribe } from "./api";
+import { useCallback, useEffect, useState } from "react";
+import { ApiError, checkHealth, getConversationMessages, getMemories, sendMessage, transcribe } from "./api";
+import { MemoryPanel } from "./components/MemoryPanel";
+import { loadConversationId, saveConversationId } from "./conversationStorage";
 import { MicButton } from "./components/MicButton";
 import { MessageInput } from "./components/MessageInput";
 import { MessageList } from "./components/MessageList";
 import { playSpeech } from "./speech";
-import type { ChatMessage } from "./types";
+import type { ChatMessage, Memory } from "./types";
 
 export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   // Returned by the backend on the first reply; sent back so it can find the history.
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationId, setConversationIdState] = useState<string | null>(loadConversationId);
+  const setConversationId = (id: string | null) => {
+    setConversationIdState(id);
+    saveConversationId(id);
+  };
   const [thinking, setThinking] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [online, setOnline] = useState<boolean | null>(null);
+  const [memories, setMemories] = useState<{ active: Memory[]; pending: Memory[] }>({ active: [], pending: [] });
+  const [showMemory, setShowMemory] = useState(false);
+
+  const refreshMemories = useCallback(() => {
+    getMemories().then(setMemories).catch(() => {}); // non-critical: chat still works without it
+  }, []);
 
   useEffect(() => {
     checkHealth().then(setOnline);
-  }, []);
+    refreshMemories();
+    // Restore the previous conversation (stored in Postgres) after a page reload.
+    const saved = loadConversationId();
+    if (saved) {
+      getConversationMessages(saved)
+        .then(({ messages }) =>
+          setMessages(
+            messages.map((m): ChatMessage =>
+              m.role === "user"
+                ? { role: "user", content: m.content }
+                : { role: "assistant", content: m.content, tools: [], requestId: null },
+            ),
+          ),
+        )
+        .catch(() => {
+          // Conversation is gone (e.g. database reset): start fresh.
+          setConversationIdState(null);
+          saveConversationId(null);
+        });
+    }
+  }, [refreshMemories]);
 
   // Voice turn: recording -> Whisper -> normal chat -> spoken reply.
   async function handleVoice(audio: Blob, player: HTMLAudioElement) {
@@ -52,6 +84,7 @@ export default function App() {
         { role: "assistant", content: res.reply, tools: res.tool_calls, requestId: res.request_id },
       ]);
       setOnline(true);
+      refreshMemories(); // the reply may have saved or proposed a memory
       // Spoken question -> spoken answer. Speech errors shouldn't hide the text reply.
       if (speakWith) {
         playSpeech(res.reply, speakWith).catch((e) =>
@@ -86,8 +119,25 @@ export default function App() {
           <span className={`status ${online === false ? "down" : online ? "up" : ""}`} />
           Jarvis
         </div>
-        <button className="ghost" onClick={newChat} disabled={thinking}>New chat</button>
+        <div className="header-actions">
+          <button
+            className="ghost"
+            onClick={() => {
+              refreshMemories();
+              setShowMemory((v) => !v);
+            }}
+          >
+            Memory
+            {memories.pending.length > 0 && (
+              <span className="badge" title="Waiting for your approval">{memories.pending.length}</span>
+            )}
+          </button>
+          <button className="ghost" onClick={newChat} disabled={thinking}>New chat</button>
+        </div>
       </header>
+      {showMemory && (
+        <MemoryPanel {...memories} onChange={refreshMemories} onClose={() => setShowMemory(false)} />
+      )}
       <MessageList messages={messages} thinking={thinking || transcribing} />
       {error && <div className="error" role="alert">{error}</div>}
       <MessageInput

@@ -5,10 +5,9 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import create_app
 from app.voice.speech_text import to_speakable
 from app.voice.tts import KokoroTTS, TTSUnavailable, parse_voice_spec, to_wav
-from tests.fakes import FakeLLM
+from tests.fakes import FakeLLM, make_test_app
 
 
 # ---- speech text cleanup -------------------------------------------------
@@ -109,25 +108,25 @@ class FakeTTS:
 
 def test_speak_returns_wav_of_cleaned_text():
     tts = FakeTTS()
-    client = TestClient(create_app(llm=FakeLLM(), tts=tts))
+    client = TestClient(make_test_app(llm=FakeLLM(), tts=tts))
     r = client.post("/api/voice/speak", json={"text": "It's **56°F** 🌧️"})
     assert r.status_code == 200 and r.headers["content-type"] == "audio/wav"
     assert tts.spoken == [("It's 56 degrees", None)]
 
 
 def test_speak_not_set_up_is_503_with_hint():
-    client = TestClient(create_app(llm=FakeLLM(), tts=FakeTTS(TTSUnavailable("download them"))))
+    client = TestClient(make_test_app(llm=FakeLLM(), tts=FakeTTS(TTSUnavailable("download them"))))
     r = client.post("/api/voice/speak", json={"text": "hi"})
     assert r.status_code == 503 and "download" in r.json()["detail"]
 
 
 def test_speak_bad_voice_is_422():
-    client = TestClient(create_app(llm=FakeLLM(), tts=FakeTTS(ValueError("unknown voice(s): x"))))
+    client = TestClient(make_test_app(llm=FakeLLM(), tts=FakeTTS(ValueError("unknown voice(s): x"))))
     assert client.post("/api/voice/speak", json={"text": "hi", "voice": "x"}).status_code == 422
 
 
 def test_voices_endpoint():
-    client = TestClient(create_app(llm=FakeLLM(), tts=FakeTTS()))
+    client = TestClient(make_test_app(llm=FakeLLM(), tts=FakeTTS()))
     assert client.get("/api/voice/voices").json() == {"default": "af_heart",
                                                        "voices": ["af_heart", "am_michael"]}
 
@@ -149,7 +148,7 @@ class FakeSTT:
 
 def test_transcribe_returns_text():
     stt = FakeSTT()
-    client = TestClient(create_app(llm=FakeLLM(), tts=FakeTTS(), stt=stt))
+    client = TestClient(make_test_app(llm=FakeLLM(), tts=FakeTTS(), stt=stt))
     r = client.post("/api/voice/transcribe", content=b"\x1aE\xdf\xa3webm",
                     headers={"Content-Type": "audio/webm"})
     assert r.status_code == 200
@@ -162,12 +161,12 @@ def test_transcribe_returns_text():
     (AudioDecodeError("could not decode audio"), 422),
 ])
 def test_transcribe_errors(error, status):
-    client = TestClient(create_app(llm=FakeLLM(), tts=FakeTTS(), stt=FakeSTT(error=error)))
+    client = TestClient(make_test_app(llm=FakeLLM(), tts=FakeTTS(), stt=FakeSTT(error=error)))
     assert client.post("/api/voice/transcribe", content=b"x").status_code == status
 
 
 def test_transcribe_rejects_empty_and_huge():
-    client = TestClient(create_app(llm=FakeLLM(), tts=FakeTTS(), stt=FakeSTT()))
+    client = TestClient(make_test_app(llm=FakeLLM(), tts=FakeTTS(), stt=FakeSTT()))
     assert client.post("/api/voice/transcribe", content=b"").status_code == 422
     assert client.post("/api/voice/transcribe", content=b"0" * (5 * 1024 * 1024 + 1)).status_code == 413
 

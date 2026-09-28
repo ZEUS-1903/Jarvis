@@ -10,6 +10,7 @@ dependencies = [
     "httpx>=0.28.1",
     "kokoro-onnx>=0.6.1",
     "faster-whisper>=1.2.1",
+    "psycopg[binary,pool]>=3.3.6",
 ]
 
 [dependency-groups]
