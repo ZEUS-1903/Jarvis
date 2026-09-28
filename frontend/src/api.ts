@@ -34,3 +34,22 @@ export async function checkHealth(): Promise<boolean> {
     return false;
   }
 }
+
+/** Ask the backend to speak `text` in JARVIS's voice. Returns WAV audio. */
+export async function speak(text: string): Promise<Blob> {
+  let res: Response;
+  try {
+    res = await fetch("/api/voice/speak", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+  } catch {
+    throw new ApiError(0, "Can't reach the Jarvis backend.");
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new ApiError(res.status, typeof body?.detail === "string" ? body.detail : `Speech failed (HTTP ${res.status})`);
+  }
+  return res.blob();
+}

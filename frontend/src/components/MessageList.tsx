@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import Markdown from "react-markdown";
 import type { ChatMessage } from "../types";
+import { SpeakButton } from "./SpeakButton";
 import { ToolTrace } from "./ToolTrace";
 
 export function MessageList({ messages, thinking }: { messages: ChatMessage[]; thinking: boolean }) {
@@ -26,7 +27,10 @@ export function MessageList({ messages, thinking }: { messages: ChatMessage[]; t
           {m.role === "assistant" ? (
             // react-markdown builds React elements; it never injects raw HTML
             // and strips javascript: links, so model output can't run scripts.
-            <div className="bubble md"><Markdown>{m.content}</Markdown></div>
+            <>
+              <div className="bubble md"><Markdown>{m.content}</Markdown></div>
+              <SpeakButton text={m.content} />
+            </>
           ) : (
             <div className="bubble">{m.content}</div>
           )}

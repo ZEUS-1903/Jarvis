@@ -2,12 +2,13 @@
 name = "jarvis-backend"
 version = "0.1.0"
 description = "JARVIS personal assistant — backend"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"  # kokoro-onnx does not support 3.14 yet
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "pydantic-settings>=2.4",
     "httpx>=0.28.1",
+    "kokoro-onnx>=0.6.1",
 ]
 
 [dependency-groups]

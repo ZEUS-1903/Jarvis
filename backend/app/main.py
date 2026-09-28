@@ -7,19 +7,20 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 
 from app.agent.loop import Agent
-from app.api import chat, health
+from app.api import chat, health, voice
 from app.config import get_settings
 from app.conversation.store import InMemoryConversationStore
 from app.llm.base import LLMClient
 from app.llm.openai_compat import OpenAICompatClient
 from app.observability.logging import request_id_var, setup_logging
 from app.tools import build_default_registry
+from app.voice.tts import KokoroTTS, TTSEngine
 
 logger = logging.getLogger("jarvis.http")
 
 
-def create_app(llm: LLMClient | None = None) -> FastAPI:
-    """Build the app. Tests pass a fake `llm`; normally we build the real one."""
+def create_app(llm: LLMClient | None = None, tts: TTSEngine | None = None) -> FastAPI:
+    """Build the app. Tests pass fakes; normally we build the real engines."""
     settings = get_settings()  # raises at startup if config is invalid
     setup_logging(settings.log_level)
 
@@ -40,6 +41,10 @@ def create_app(llm: LLMClient | None = None) -> FastAPI:
     app = FastAPI(title="JARVIS", version="0.1.0", lifespan=lifespan)
     # One shared instance of each, reused by every request.
     app.state.store = InMemoryConversationStore(max_messages=settings.history_max_messages)
+    app.state.tts = tts or KokoroTTS(
+        settings.tts_model_path, settings.tts_voices_path,
+        default_voice=settings.tts_voice, speed=settings.tts_speed,
+    )
     app.state.agent = Agent(
         llm, build_default_registry(),
         timezone=settings.default_timezone, units=settings.default_units,
@@ -77,6 +82,7 @@ def create_app(llm: LLMClient | None = None) -> FastAPI:
 
     app.include_router(health.router, prefix="/api")
     app.include_router(chat.router, prefix="/api")
+    app.include_router(voice.router, prefix="/api")
     logger.info("app.started", extra={"model": llm.model, "llm_url": settings.llm_base_url,
                                       "default_timezone": settings.default_timezone})
     return app

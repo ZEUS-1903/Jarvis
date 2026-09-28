@@ -30,6 +30,14 @@ class Settings(BaseSettings):
     llm_api_key: SecretStr | None = None  # SecretStr: never printed in logs/reprs
     llm_timeout_s: float = 120.0          # local models on a laptop can be slow
 
+    # Text-to-speech (Kokoro, runs locally). Model files are downloaded once;
+    # see README "Voice setup". Paths are relative to the backend/ folder.
+    tts_model_path: str = "models/kokoro-v1.0.onnx"
+    tts_voices_path: str = "models/voices-v1.0.bin"
+    # One voice ("af_heart") or a blend ("am_michael:60,bm_george:40").
+    tts_voice: str = "af_heart"
+    tts_speed: float = 1.0
+
     # Agent safety limits
     agent_max_iterations: int = 5         # max LLM<->tool rounds per user message
     history_max_messages: int = 20        # user+assistant messages kept per conversation

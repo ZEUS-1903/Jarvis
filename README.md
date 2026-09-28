@@ -72,6 +72,35 @@ Open **http://localhost:5173** and ask: *"What's the weather in Boston and what 
 | "Jarvis restarted and lost this conversation" | Expected in V1: history is in memory and `--reload` restarts on code changes. |
 | `address already in use` | Something else uses the port; stop it or change `--port`. |
 
+## Voice setup (text-to-speech)
+
+JARVIS speaks with [Kokoro](https://github.com/thewh1teagle/kokoro-onnx), a small
+open-weights (Apache-2.0) voice model that runs locally. Download the model files once
+(~340 MB):
+
+```bash
+cd backend
+mkdir -p models && cd models
+curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+cd .. && uv sync
+```
+
+If a download 404s, get the current file names from the project's releases page.
+
+Pick JARVIS's voice by auditioning (plays each sample on macOS):
+
+```bash
+uv run python -m app.voice list            # all voice names
+uv run python -m app.voice audition "Good evening. It's 56 degrees with light drizzle." \
+    af_heart am_michael bm_george "am_michael:60,bm_george:40"
+```
+
+Voice names: first letter = accent (`a` American, `b` British), second = `f`/`m`.
+A blend like `am_michael:60,bm_george:40` mixes voices into one that is none of the
+presets. Put your choice in `backend/.env` as `JARVIS_TTS_VOICE=...` and restart the
+backend. In the chat, click 🔊 under any reply.
+
 ## Try tools directly (no LLM needed)
 
 ```bash
