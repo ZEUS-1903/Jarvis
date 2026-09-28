@@ -4,7 +4,12 @@ import { ToolTrace } from "./ToolTrace";
 
 export function MessageList({ messages, thinking }: { messages: ChatMessage[]; thinking: boolean }) {
   const endRef = useRef<HTMLDivElement>(null);
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, thinking]);
+  // Braces matter: without them the arrow would *return* scrollIntoView()'s result,
+  // and React treats any returned value as a cleanup function. Newer browsers
+  // return a Promise there, which crashed the app ("destroy is not a function").
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, thinking]);
 
   return (
     <div className="messages">
