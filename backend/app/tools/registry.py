@@ -57,9 +57,10 @@ class ToolRegistry:
         if tool is None:
             return ToolResult(name=name, ok=False, error=f"unknown tool '{name}'")
 
-        # V1 has no confirmation flow, so anything above LOW is refused outright.
-        # Phase 4 replaces this with "pause and ask the user".
-        if tool.permission is not Permission.LOW:
+        # LOW (public data) and MEDIUM (reads your data; the tool itself needs
+        # your Google authorization) run automatically. HIGH (changes things:
+        # sending, deleting) is refused until the confirmation flow exists.
+        if tool.permission is Permission.HIGH:
             return ToolResult(name=name, ok=False, error="tool requires user confirmation")
 
         # Providers usually send arguments as a JSON *string*; parse it here.

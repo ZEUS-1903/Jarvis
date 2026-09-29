@@ -12,6 +12,9 @@ dependencies = [
     "faster-whisper>=1.2.1",
     "psycopg[binary,pool]>=3.3.6",
     "openwakeword>=0.6.0",
+    "google-api-python-client>=2.200.0",
+    "google-auth-oauthlib>=1.4.1",
+    "keyring>=25.7.0",
 ]
 
 [dependency-groups]

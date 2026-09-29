@@ -13,6 +13,8 @@ from app.api import memories as memories_api
 from app.config import get_settings
 from app.conversation.store import ConversationStore, PostgresConversationStore
 from app.db.database import make_pool, migrate, open_pool
+from app.google.auth import KeychainTokenStore
+from app.google.client import GoogleClients
 from app.memory.store import MemoryStore, PostgresMemoryStore
 from app.llm.base import LLMClient
 from app.llm.openai_compat import OpenAICompatClient
@@ -29,6 +31,7 @@ def create_app(
     llm: LLMClient | None = None, tts: TTSEngine | None = None, stt: STTEngine | None = None,
     store: ConversationStore | None = None, memories: MemoryStore | None = None,
     wake_factory: Callable[[], WakeDetector] | None = None,
+    google: GoogleClients | None = None,
 ) -> FastAPI:
     """Build the app. Tests pass fakes; normally we build the real engines."""
     settings = get_settings()  # raises at startup if config is invalid
@@ -74,7 +77,7 @@ def create_app(
     # A factory, not an instance: each WebSocket connection needs its own detector.
     app.state.wake_factory = wake_factory or (lambda: OpenWakeWordDetector(settings.wake_model))
     app.state.agent = Agent(
-        llm, build_default_registry(memories),
+        llm, build_default_registry(memories, google or GoogleClients(KeychainTokenStore())),
         timezone=settings.default_timezone, units=settings.default_units,
         location=settings.default_location,
         max_iterations=settings.agent_max_iterations, memories=memories,

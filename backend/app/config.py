@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     # Browser pages allowed to open the wake-word WebSocket (see api/voice.py).
     allowed_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
+    # Google (Gmail + Calendar). The OAuth client file comes from Google Cloud
+    # Console (Desktop app); see README "Gmail & Calendar".
+    google_client_file: str = "secrets/google_client.json"
+
     # PostgreSQL. Homebrew's default user is your macOS login with no password,
     # so "postgresql://localhost/jarvis" works after `createdb jarvis`.
     database_url: str = "postgresql://localhost:5432/jarvis"

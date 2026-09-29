@@ -8,3 +8,4 @@ dist/
 *.tsbuildinfo
 backend/models/
 backend/voice_samples/
+backend/secrets/

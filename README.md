@@ -155,6 +155,36 @@ JARVIS stops recording after about a second of silence.
 - Only the JARVIS page (`http://localhost:5173`) may connect to the wake word stream; if you
   run the frontend on another port, add it to `JARVIS_ALLOWED_ORIGINS`.
 
+## Gmail & Google Calendar (read-only)
+
+JARVIS can search and read your Gmail and read your Google Calendar. It cannot send,
+delete or change anything yet.
+
+**One-time Google Cloud setup (free, ~15 min):**
+
+1. https://console.cloud.google.com → create a project `Jarvis`.
+2. APIs & Services → Library → enable **Gmail API** and **Google Calendar API**.
+3. Google Auth Platform (OAuth consent screen) → Get started → app name `Jarvis`,
+   your email, Audience **External**.
+4. Audience → Test users → add your own Gmail address.
+5. Clients (Credentials) → Create client → **Desktop app** → Download JSON.
+6. Save it as `backend/secrets/google_client.json` (git-ignored; never commit it).
+
+**Connect** (opens your browser; approve the "unverified app" warning, it's your own app):
+
+```bash
+cd backend
+uv run python -m app.google connect
+uv run python -m app.google status
+```
+
+The token is stored in the macOS Keychain. While the Google app is in *Testing* mode, Google
+expires it after 7 days: run `connect` again when JARVIS says access expired.
+Revoke any time at https://myaccount.google.com/connections (and `python -m app.google disconnect`).
+
+Email and calendar text is treated as untrusted: JARVIS summarizes it but never follows
+instructions inside it.
+
 ## Try tools directly (no LLM needed)
 
 ```bash
