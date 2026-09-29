@@ -126,6 +126,7 @@ export default function App() {
           <WakeToggle
             isBusy={() => thinking || transcribing || isSpeaking()}
             onCommand={(wav) => handleVoice(wav, new Audio())}
+            onNotice={setError}
           />
           <button
             className="ghost"

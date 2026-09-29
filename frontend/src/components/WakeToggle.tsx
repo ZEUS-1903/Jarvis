@@ -4,6 +4,8 @@ import { WakeListener, type WakeState } from "../wake";
 interface Props {
   isBusy: () => boolean;
   onCommand: (wav: Blob) => void;
+  /** Errors and notices go to the app's message banner, not the header. */
+  onNotice: (message: string) => void;
 }
 
 const LABELS: Record<WakeState, string> = {
@@ -15,13 +17,12 @@ const LABELS: Record<WakeState, string> = {
 };
 
 /** Header switch for hands-free mode. Off by default: the mic stays on while enabled. */
-export function WakeToggle({ isBusy, onCommand }: Props) {
+export function WakeToggle({ isBusy, onCommand, onNotice }: Props) {
   const [state, setState] = useState<WakeState>("off");
-  const [note, setNote] = useState<string | null>(null);
   const listener = useRef<WakeListener | null>(null);
   // Keep the latest callbacks without restarting the listener on every render.
-  const latest = useRef({ isBusy, onCommand });
-  latest.current = { isBusy, onCommand };
+  const latest = useRef({ isBusy, onCommand, onNotice });
+  latest.current = { isBusy, onCommand, onNotice };
 
   useEffect(() => () => listener.current?.stop(), []); // mic off when leaving the page
 
@@ -31,11 +32,10 @@ export function WakeToggle({ isBusy, onCommand }: Props) {
       listener.current = null;
       return;
     }
-    setNote(null);
     listener.current = new WakeListener({
       onState: (s, detail) => {
         setState(s);
-        setNote(detail ?? null);
+        if (detail) latest.current.onNotice(detail);
         if (s === "error") listener.current = null;
       },
       onCommand: (wav) => latest.current.onCommand(wav),
@@ -47,11 +47,10 @@ export function WakeToggle({ isBusy, onCommand }: Props) {
   const on = state === "listening" || state === "capturing" || state === "starting";
   return (
     <span className="wake">
-      <button className={`ghost wake-btn ${state}`} onClick={toggle} aria-pressed={on} title={note ?? undefined}>
+      <button className={`ghost wake-btn wake-${state}`} onClick={toggle} aria-pressed={on}>
         <span className="wake-dot" />
         {LABELS[state]}
       </button>
-      {note && <span className="wake-note">{note}</span>}
     </span>
   );
 }
